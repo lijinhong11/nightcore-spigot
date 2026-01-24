@@ -1,5 +1,6 @@
 package su.nightexpress.nightcore.bridge.wrap;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,8 @@ import java.util.concurrent.CompletableFuture;
 public interface NightProfile {
 
     void apply(@NotNull SkullMeta meta);
+
+    void applyAsDataComponent(@NotNull ItemStack item);
 
     @Nullable UUID getId();
 

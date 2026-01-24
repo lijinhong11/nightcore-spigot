@@ -1,5 +1,6 @@
 package su.nightexpress.nightcore.bridge.spigot;
 
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.profile.PlayerTextures;
@@ -24,6 +25,11 @@ public class SpigotProfile implements NightProfile {
         if (this.backend == null || !this.backend.getTextures().isEmpty()) { // spigot moment
             meta.setOwnerProfile(this.backend);
         }
+    }
+
+    @Override
+    public void applyAsDataComponent(@NotNull ItemStack item) {
+        //it sucks
     }
 
     @Override

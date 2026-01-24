@@ -281,14 +281,14 @@ public class NightMeta implements Writeable {
             if (meta instanceof SkullMeta skullMeta) {
                 if (this.playerProfile != null) this.playerProfile.query().apply(skullMeta);
             }
-
             if (this.displayName != null) {
                 String name;
 
                 if (this.placeholderContext != null) {
                     name = this.placeholderContext.apply(this.displayName);
+                } else {
+                    name = this.replacer == null ? this.displayName : this.replacer.apply(this.displayName);
                 }
-                else name = this.replacer == null ? this.displayName : this.replacer.apply(this.displayName);
 
                 ItemUtil.setCustomName(meta, name);
             }

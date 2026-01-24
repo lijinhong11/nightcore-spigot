@@ -1,5 +1,6 @@
 package su.nightexpress.nightcore.util.bukkit;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -9,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import su.nightexpress.nightcore.Engine;
+import su.nightexpress.nightcore.bridge.components.ProfileComponent;
 import su.nightexpress.nightcore.bridge.item.ItemAdapter;
 import su.nightexpress.nightcore.bridge.wrap.NightProfile;
 import su.nightexpress.nightcore.config.FileConfig;
@@ -24,9 +26,11 @@ import su.nightexpress.nightcore.util.NumberUtil;
 import su.nightexpress.nightcore.util.placeholder.PlaceholderContext;
 import su.nightexpress.nightcore.util.placeholder.Replacer;
 import su.nightexpress.nightcore.util.profile.CachedProfile;
+import su.nightexpress.nightcore.util.profile.PlayerProfiles;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -37,6 +41,8 @@ public class NightItem implements Writeable {
 
     private final ItemStack backend;
     private final NightMeta meta;
+
+    private ProfileComponent profileComponent;
 
     private Material material;
     private int amount;
@@ -59,6 +65,10 @@ public class NightItem implements Writeable {
 
         this.material = itemStack.getType();
         this.amount = itemStack.getAmount();
+
+        if (this.backend.hasData(DataComponentTypes.PROFILE)) {
+            this.profileComponent = ProfileComponent.getFromDataComponent(this.backend.getData(DataComponentTypes.PROFILE));
+        }
     }
 
     @NotNull
@@ -93,6 +103,8 @@ public class NightItem implements Writeable {
 
         NightMeta displayMeta = NightMeta.read(config, path);
 
+        ItemStack item = null;
+
         Material material = BukkitThing.getMaterial(String.valueOf(materialName));
         if (material == null) {
             String adapterKey = materialName.substring(0, materialName.indexOf(':'));
@@ -101,15 +113,23 @@ public class NightItem implements Writeable {
             if (adapter instanceof IdentifiableItemAdapter itemAdapter) {
                 ItemStack adapterItem = itemAdapter.createItem(adapterKeyId);
                 if (adapterItem != null) {
-                    return new NightItem(adapterItem, displayMeta);
+                    item = adapterItem;
                 }
             }
-
-            Engine.core().error("Invalid material '" + materialName + "'. Found in '" + config.getFile().getAbsolutePath() + "' -> '" + path + "'.");
-            material = Material.BARRIER;
+        } else {
+            item = new ItemStack(material, amount);
         }
 
-        ItemStack item = new ItemStack(material, amount);
+        if (item == null) {
+            Engine.core().error("Invalid material '" + materialName + "'. Found in '" + config.getFile().getAbsolutePath() + "' -> '" + path + "'.");
+            item = new ItemStack(Material.BARRIER, amount);
+        }
+
+        if (config.contains(path + ".Profile")) {
+            UUID uuid = UUID.fromString(String.valueOf(config.getString(path + ".Profile.UUID")));
+            CachedProfile profile = PlayerProfiles.createProfile(uuid);
+            profile.query().applyAsDataComponent(item);
+        }
 
         return new NightItem(item, displayMeta);
     }
@@ -161,6 +181,19 @@ public class NightItem implements Writeable {
         ItemStack stack = Engine.software().setType(this.backend, this.material);
 
         stack.setAmount(this.amount);
+
+        if (getPlaceholderContext() != null) {
+            if (profileComponent != null) {
+                String uuid = getPlaceholderContext().apply(profileComponent.uuid());
+                String name = getPlaceholderContext().apply(profileComponent.name());
+
+                profileComponent = new ProfileComponent(uuid, name);
+            }
+        }
+
+        if (profileComponent != null) {
+            profileComponent.apply(stack);
+        }
 
         this.meta.apply(stack);
         return stack;

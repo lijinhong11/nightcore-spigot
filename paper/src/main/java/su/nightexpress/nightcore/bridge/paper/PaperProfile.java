@@ -1,6 +1,9 @@
 package su.nightexpress.nightcore.bridge.paper;
 
 import com.destroystokyo.paper.profile.PlayerProfile;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ResolvableProfile;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.profile.PlayerTextures;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +25,11 @@ public class PaperProfile implements NightProfile {
     @Override
     public void apply(@NotNull SkullMeta meta) {
         meta.setPlayerProfile(this.backend);
+    }
+
+    @Override
+    public void applyAsDataComponent(@NotNull ItemStack item) {
+        item.setData(DataComponentTypes.PROFILE, ResolvableProfile.resolvableProfile(this.backend));
     }
 
     @Override
